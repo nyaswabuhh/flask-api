@@ -28,9 +28,8 @@ class Sale(db.Model):
     id=db.Column(db.Integer, primary_key=True)
     pid=db.Column(db.Integer, db.ForeignKey("products.id"), nullable=False)
     quantity=db.Column(db.Integer, nullable=False)
-    created_at=db.Column(db.DateTime, default=datetime.now, nullable=False)
+    created_at=db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
-with app.app_context():
-    db.create_all()
+
     
 

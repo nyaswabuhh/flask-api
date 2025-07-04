@@ -1,3 +1,4 @@
+from datetime import datetime
 from flask import Flask, jsonify, request
 from dbservice import Product, Sale,db,app
 
@@ -41,7 +42,7 @@ def products():
             return jsonify(error),401
 
         else:
-            # product_list.append(data)
+            
             new_product=Product(name=data["name"], bp=data["bp"], sp=data["sp"])
             db.session.add(new_product)
             db.session.commit()
@@ -72,24 +73,47 @@ def sales():
         data = dict(request.get_json())
         if "pid" not in data.keys()or "quantity" not in data.keys():
             error={"error":"Invalid Keys"}
-            return jsonify(error),401
+            return jsonify(error),400
 
         elif data["pid"]=="" or data["quantity"]=="":
             error={"error":"Ensure all fields are filled"}
             return jsonify(error),401
         
         else:
+                
+            if "created_at" in data and data["created_at"]:
+                try:
+                    created_at = datetime.strptime(data["created_at"], '%Y-%m-%d %H:%M:%S')
+                except ValueError:
+                    return jsonify({"error": "Invalid datetime format. Use YYYY-MM-DD HH:MM:SS"}), 400
+            else:
+                created_at = datetime.utcnow()  # Default fallback
+                                 
             
-            new_sale=Sale(pid=data["pid"], quantity=data["quantity"])
+            new_sale=Sale(pid=data["pid"], quantity=data["quantity"], created_at=created_at)
             db.session.add(new_sale)
             db.session.commit()
-            return jsonify(data), 201
+
+            updated_sale={
+                "id":new_sale.id,
+                "pid":new_sale.pid,
+                "quantity":new_sale.quantity,
+                "created_at":new_sale.created_at
+            }
+
+            return jsonify(updated_sale), 201
 
     else:
         error={"error":"Method not allowed"}
-        return jsonify(error), 201
+        return jsonify(error), 405
+    
+# app.run(debug=True)
 
-       
-app.run(debug=True)
+
+if __name__ == '__main__':
+    with app.app_context():
+        db.create_all()
+
+    app.run(debug=True)
 
 
