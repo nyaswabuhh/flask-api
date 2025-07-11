@@ -1,6 +1,7 @@
 from datetime import datetime
 from flask import Flask, jsonify, request
 from dbservice import Product, Sale,db,app
+from flask_cors import CORS
 
 
 
