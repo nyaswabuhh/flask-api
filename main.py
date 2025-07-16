@@ -1,7 +1,8 @@
 from datetime import datetime
 from flask import Flask, jsonify, request
-from dbservice import Product, Sale,db,app
+from dbservice import Product, Sale,User,db,app
 from flask_cors import CORS
+from flask_jwt_extended import JWTManager, create_access_token
 
 
 
@@ -57,7 +58,7 @@ def products():
 def sales():
     if request.method=="GET":
         sold_items =Sale.query.all()
-        print ('sold items', sold_items)
+        # print ('sold items', sold_items)
 
         sold=[]
         for i in sold_items:
@@ -109,6 +110,37 @@ def sales():
         return jsonify(error), 405
     
 # app.run(debug=True)
+
+@app.route("/api/register", methods=["POST"])
+def register():
+    data=dict(request.get_json())
+    if data["full_name"]=="" or data["email"]=="" or data["password"]=="":
+        error={"error":"ensure all fields ar filled"}
+        return jsonify(error), 401
+    else:
+        new_user=User(full_name=data["full_name"], email=data["email"], password=data["password"])
+        db.session.add(new_user)
+        db.session.commit()
+        return jsonify(data), 201
+    
+@app.route("/api/login", methods=["POST"])
+def login():
+    data=dict(request.get_json())
+    
+    email = data.get("email")
+    password = data.get("password")
+    
+    user = User.query.filter_by(email=email, password=password).first()
+
+    
+    if user:
+            token=create_access_token(identity=user.email)
+            return jsonify({"message":"Login success", "token":token}),200
+    else:            
+            pass
+    return jsonify({"message":"Invalid credentials"}), 401
+
+
 
 
 if __name__ == '__main__':
