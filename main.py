@@ -1,8 +1,10 @@
 from datetime import datetime
+from sqlalchemy import func
 from flask import Flask, jsonify, request
 from dbservice import Product, Sale,User,db,app
 from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token
+from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
+import sentry_sdk
 
 
 
@@ -10,15 +12,25 @@ from flask_jwt_extended import JWTManager, create_access_token
 
 # product_list=[]
 
+sentry_sdk.init(
+    dsn="https://1440d5e862415a233f5f31b1b2cacd76@o4509707526668288.ingest.de.sentry.io/4509707540168784",
+    # Add data like request headers and IP for users,
+    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+    send_default_pii=True,
+)
 
 @app.route("/")
 def index():
-
     res = {"Flask-API":"1.0"}
     return jsonify(res),200
 
 @app.route("/api/products", methods=["GET","POST"])
+@jwt_required()
 def products():
+    email=get_jwt_identity()
+    print("email.............", email)
+
+
     if request.method=="GET":
         product_list =Product.query.all()
         print ('product list', product_list)
@@ -55,9 +67,14 @@ def products():
     
 
 @app.route("/api/sales", methods=["GET", "POST"])
+@jwt_required()
 def sales():
+    email = get_jwt_identity()
+
     if request.method=="GET":
-        sold_items =Sale.query.all()
+        # sold_items =Sale.query.all()
+        sold_items = Sale.query.order_by(Sale.created_at.desc()).all()
+
         # print ('sold items', sold_items)
 
         sold=[]
@@ -141,7 +158,26 @@ def login():
     return jsonify({"message":"Invalid credentials"}), 401
 
 
+@app.route("/api/saleschart", methods=["GET"])
+@jwt_required()
+def saleschart():
+    sales = (
+        db.session.query(
+            func.date(Sale.created_at).label("sale_date"),
+            func.sum(Sale.quantity).label("total_quantity")
+        )
+        .group_by(func.date(Sale.created_at))
+        .order_by(func.date(Sale.created_at))
+        .all()
+    )
+    
+    sales_chart_data = [
+        {"date": str(row.sale_date), "quantity": int(row.total_quantity)} for row in sales
+    ]
+    print("sales data.....", sales_chart_data)
 
+    return jsonify(sales_chart_data), 200
+   
 
 if __name__ == '__main__':
     with app.app_context():
