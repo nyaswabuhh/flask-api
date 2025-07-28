@@ -21,7 +21,7 @@ sentry_sdk.init(
 
 @app.route("/")
 def index():
-    res = {"Flask-API":"1.0"}
+    res = {"Flask-API Special Development":"1.0"}
     return jsonify(res),200
 
 @app.route("/api/products", methods=["GET","POST"])
@@ -171,12 +171,38 @@ def saleschart():
         .all()
     )
     
-    sales_chart_data = [
-        {"date": str(row.sale_date), "quantity": int(row.total_quantity)} for row in sales
-    ]
-    print("sales data.....", sales_chart_data)
+    items_sales_date = [str(row[0]) for row in sales]
+    products_sales_quantity = [float(row[1]) for row in sales]
+    data = {"sales_date": items_sales_date, "products_quantity":products_sales_quantity}
 
-    return jsonify(sales_chart_data), 200
+    # sales_chart_data = [
+    #     {"date": str(row.sale_date), "quantity": int(row.total_quantity)} for row in sales
+    # ]
+    print("sales data.....", data)
+
+    return jsonify(data), 200
+
+
+@app.route("/api/productschart", methods=["GET"])
+@jwt_required()
+def product_prices():
+    
+        products = db.session.query(Product.name, Product.bp, Product.sp).order_by(Product.name).all()
+
+        product_names = [row.name for row in products]
+        # buying_prices = [round(row.bp, 2) for row in products]
+        selling_prices = [row.sp for row in products]
+
+        data = {
+            "product_names": product_names,
+            # "buying_prices": buying_prices,
+            "selling_prices": selling_prices
+        }
+
+        print("products selling price.........", data)
+        return jsonify(data), 200
+
+    
    
 
 if __name__ == '__main__':
