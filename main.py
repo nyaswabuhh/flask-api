@@ -21,7 +21,7 @@ sentry_sdk.init(
 
 @app.route("/")
 def index():
-    res = {"Flask-API Special Development":"1.0"}
+    res = {"Flask-API Special Development -register":"1.0"}
     return jsonify(res),200
 
 @app.route("/api/products", methods=["GET","POST"])
