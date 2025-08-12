@@ -35,6 +35,8 @@ class Sale(db.Model):
     quantity=db.Column(db.Integer, nullable=False)
     created_at=db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
 
+  
+
 
 class User(db.Model):
     __tablename__="users"
@@ -46,3 +48,12 @@ class User(db.Model):
 
     
 
+class Payment(db.Model):
+    __tablename__="payments"
+    id=db.Column(db.Integer, primary_key=True)
+    sale_id=db.Column(db.Integer, nullable=True)
+    trans_code=db.Column(db.String, nullable=True)
+    mrid=db.Column(db.String, nullable=False)
+    crid=db.Column(db.String, nullable=False)
+    amount=db.Column(db.Integer, nullable=True)
+    created_at=db.Column(db.DateTime, default=datetime.utcnow)
