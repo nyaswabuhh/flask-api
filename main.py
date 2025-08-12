@@ -1,28 +1,32 @@
 from datetime import datetime
+
+from flask import Flask, json, jsonify, request
 from sqlalchemy import func
-from flask import Flask, jsonify, request
-from dbservice import Product, Sale,User,db,app
+from dbservice import Payment, Product, Sale,User,db,app
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import sentry_sdk
-
+from mpesa import make_stk_push
 
 
 # app=Flask(__name__)
 
+
 # product_list=[]
 
-sentry_sdk.init(
-    dsn="https://1440d5e862415a233f5f31b1b2cacd76@o4509707526668288.ingest.de.sentry.io/4509707540168784",
-    # Add data like request headers and IP for users,
-    # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
-    send_default_pii=True,
-)
+# sentry_sdk.init(
+#     dsn="https://1440d5e862415a233f5f31b1b2cacd76@o4509707526668288.ingest.de.sentry.io/4509707540168784",
+#     # Add data like request headers and IP for users,
+#     # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
+#     send_default_pii=True,
+# )
 
 @app.route("/")
 def index():
-    res = {"Flask-API":"1.0"}
+    res = {"Flask-API Special Development -register":"1.0"}
     return jsonify(res),200
+
+# Products Routes
 
 @app.route("/api/products", methods=["GET","POST"])
 @jwt_required()
@@ -66,6 +70,7 @@ def products():
         return jsonify(error),401
     
 
+#Sales Routes
 @app.route("/api/sales", methods=["GET", "POST"])
 @jwt_required()
 def sales():
@@ -73,20 +78,37 @@ def sales():
 
     if request.method=="GET":
         # sold_items =Sale.query.all()
-        sold_items = Sale.query.order_by(Sale.created_at.desc()).all()
+        # sold_items = Sale.query.order_by(Sale.created_at.desc()).all()
 
         # print ('sold items', sold_items)
 
-        sold=[]
-        for i in sold_items:
-            sold_items_data={
-                "id":i.id,
-                "pid":i.pid,
-                "quantity":i.quantity,
-                "created_at":i.created_at
+        sales = Sale.query.order_by(Sale.created_at.desc()).all()
+        
+        data = [
+            {
+                "id":sale.id,
+                "product_name": sale.product.name,
+                "quantity": sale.quantity,
+                "unit_price": sale.product.sp,
+                "total_sales": round(sale.quantity * sale.product.sp, 2),
+                "created_at": sale.created_at.isoformat()
             }
-            sold.append(sold_items_data)
-        return jsonify(sold), 200
+            for sale in sales
+        ]
+        print('sample data list tests stete', data)
+        
+        return jsonify(data), 200
+
+        # sold=[]
+        # for i in sold_items:
+        #     sold_items_data={
+        #         "id":i.id,
+        #         "pid":i.pid,
+        #         "quantity":i.quantity,
+        #         "created_at":i.created_at
+        #     }
+        #     sold.append(sold_items_data)
+        # return jsonify(sold), 200
     
     elif request.method=="POST":
         data = dict(request.get_json())
@@ -128,6 +150,8 @@ def sales():
     
 # app.run(debug=True)
 
+#Register Route
+
 @app.route("/api/register", methods=["POST"])
 def register():
     data=dict(request.get_json())
@@ -139,7 +163,9 @@ def register():
         db.session.add(new_user)
         db.session.commit()
         return jsonify(data), 201
-    
+
+
+#Login Route
 @app.route("/api/login", methods=["POST"])
 def login():
     data=dict(request.get_json())
@@ -157,7 +183,7 @@ def login():
             pass
     return jsonify({"message":"Invalid credentials"}), 401
 
-
+#Sales Chart
 @app.route("/api/saleschart", methods=["GET"])
 @jwt_required()
 def saleschart():
@@ -171,13 +197,75 @@ def saleschart():
         .all()
     )
     
-    sales_chart_data = [
-        {"date": str(row.sale_date), "quantity": int(row.total_quantity)} for row in sales
-    ]
-    print("sales data.....", sales_chart_data)
+    items_sales_date = [str(row[0]) for row in sales]
+    products_sales_quantity = [float(row[1]) for row in sales]
+    data = {"sales_date": items_sales_date, "products_quantity":products_sales_quantity}
 
-    return jsonify(sales_chart_data), 200
-   
+    # sales_chart_data = [
+    #     {"date": str(row.sale_date), "quantity": int(row.total_quantity)} for row in sales
+    # ]
+    print("sales data.....", data)
+
+    return jsonify(data), 200
+
+#Products Chart
+@app.route("/api/productschart", methods=["GET"])
+@jwt_required()
+def product_prices():
+    
+        products = db.session.query(Product.name, Product.bp, Product.sp).order_by(Product.name).all()
+
+        product_names = [row.name for row in products]
+        # buying_prices = [round(row.bp, 2) for row in products]
+        selling_prices = [row.sp for row in products]
+
+        data = {
+            "product_names": product_names,
+            # "buying_prices": buying_prices,
+            "selling_prices": selling_prices
+        }
+
+        print("products selling price.........", data)
+        return jsonify(data), 200
+
+
+# MPESA STKPush
+
+@app.route("/api/stkpush", methods=["POST"])
+def stkpush():
+    data=request.get_json() 
+    res =  make_stk_push(data["amount"], data["phone"], data["sale_id"])
+    mrid = res["MerchantRequestID"]
+    crid = res["CheckoutRequestID"]
+    sale_id = data["sale_id"]
+
+    pay = Payment(mrid=mrid, crid=crid, sale_id=sale_id)
+    db.session.add(pay)
+    db.session.commit()   
+    return json.dumps(res)
+
+@app.route("/mpesa/callback", methods=["GET", "POST"])
+def mpesa_callback():
+    data=request.get_json()
+    print("STK DATA.........", data)
+    mrid = data['Body']['stkCallback']['MerchantRequestID']
+    crid = data['Body']['stkCallback']['CheckoutRequestID']
+    payment = Payment.query.filter_by(mrid=mrid, crid=crid).first()
+    if int(data['Body']['stkCallback']['ResultCode']) ==0:
+       trans_code = data['Body']['stkCallback']['CallbackMetadata']['Item'][1]['Value']
+       amount = data['Body']['stkCallback']['CallbackMetadata']['Item'][0]['Value']
+       payment.trans_code = trans_code
+       payment.amount = amount
+       db.session.commit()      
+    return jsonify({"success" : "Callback received"}), 200
+
+@app.route("/api/payments", methods=["GET"])
+def payments():
+    payments = Payment.query.order_by(Payment.created_at.desc()).all()
+    
+
+    return jsonify(payments)
+
 
 if __name__ == '__main__':
     with app.app_context():
