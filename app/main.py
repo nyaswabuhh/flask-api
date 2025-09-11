@@ -7,7 +7,9 @@ from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
 import sentry_sdk
 from mpesa import make_stk_push
+import os
 
+# docker run -v C:/Users/USER/Desktop/CODE/Advanced-Class/flaskapi/app:/app/database/database.db -p 127.0.0.1:5000:80 -t flask-api
 
 # app=Flask(__name__)
 

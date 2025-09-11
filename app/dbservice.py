@@ -3,6 +3,7 @@ from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token
+import os
 
 app= Flask (__name__)
 CORS(app)
@@ -10,11 +11,17 @@ app.config["JWT_SECRET_KEY"]="sirikuu"
 jwt=JWTManager(app)
 
 
-app.config['SQLALCHEMY_DATABASE_URI']='postgresql://postgres:simbapos%402019@localhost:5432/flask_api'
+# app.config['SQLALCHEMY_DATABASE_URI']='postgresql://postgres:simbapos%402019@localhost:5432/flask_api'
+# app.config['SQLALCHEMY_DATABASE_URI']='sqlite://database/flask_api.db'
+# basedir = os.path.abspath(os.path.dirname(__file__))
+# print("basedir ------", basedir)
+# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database', 'flask_api.db')
 
+app = Flask(__name__)
 
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS']=False
-
+basedir = os.path.abspath(os.path.dirname(__file__))
+print("basedir ------", basedir)
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database', 'flask_api.db')
 
 db = SQLAlchemy(app)
 
