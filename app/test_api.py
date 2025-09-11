@@ -1,7 +1,7 @@
 import unittest
 
-from app.main import app
-from app.dbservice import app
+from main import app
+from dbservice import app
 
 class FlaskAPITest(unittest.TestCase):
     token = ""

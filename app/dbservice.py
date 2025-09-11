@@ -8,16 +8,14 @@ import os
 app= Flask (__name__)
 CORS(app)
 app.config["JWT_SECRET_KEY"]="sirikuu"
+app.config["JWT_TOKEN_LOCATION"] = ["headers"]
 jwt=JWTManager(app)
 
 
 # app.config['SQLALCHEMY_DATABASE_URI']='postgresql://postgres:simbapos%402019@localhost:5432/flask_api'
 # app.config['SQLALCHEMY_DATABASE_URI']='sqlite://database/flask_api.db'
-# basedir = os.path.abspath(os.path.dirname(__file__))
-# print("basedir ------", basedir)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database', 'flask_api.db')
 
-app = Flask(__name__)
+# app = Flask(__name__)
 
 basedir = os.path.abspath(os.path.dirname(__file__))
 print("basedir ------", basedir)
