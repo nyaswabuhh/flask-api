@@ -1,31 +1,8 @@
-from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
+from flask import Flask
 from datetime import datetime
-from flask_cors import CORS
-from flask_jwt_extended import JWTManager, create_access_token
 import os
-
-app= Flask (__name__)
-CORS(app)
-app.config["JWT_SECRET_KEY"]="sirikuu"
-app.config["JWT_TOKEN_LOCATION"] = ["headers"]
-jwt=JWTManager(app)
-
-
-# app.config['SQLALCHEMY_DATABASE_URI']='postgresql://postgres:simbapos%402019@localhost:5432/flask_api'
-# app.config['SQLALCHEMY_DATABASE_URI']='sqlite://database/flask_api.db'
-
-# app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI']='postgresql://myduka_user:simbapos2019@172.17.0.1:5432/myduka_api'
-# CREATE USER myduka_user WITH PASSWORD 'Zawadi%402006#'
-# GRANT CONNECT ON DATABASE myduka_api TO myduka_user;
-
-basedir = os.path.abspath(os.path.dirname(__file__))
-print("basedir ------", basedir)
-# app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + os.path.join(basedir, 'database', 'flask_api.db')
-
-db = SQLAlchemy(app)
-
+from extensions import db
 
 class Product(db.Model):
     __tablename__='products'

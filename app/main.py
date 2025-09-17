@@ -5,9 +5,10 @@ from flask_sqlalchemy import SQLAlchemy
 from dbservice import Payment, Product, Sale,User,db,app
 from flask_cors import CORS
 from flask_jwt_extended import JWTManager, create_access_token, jwt_required, get_jwt_identity
-import sentry_sdk
+# import sentry_sdk
 from mpesa import make_stk_push
 import os
+from extensions import app, db
 
 # docker run -v C:/Users/USER/Desktop/CODE/Advanced-Class/flaskapi/app:/app/database/database.db -p 127.0.0.1:5000:80 -t flask-api
 
@@ -22,6 +23,13 @@ import os
 #     # see https://docs.sentry.io/platforms/python/data-management/data-collected/ for more info
 #     send_default_pii=True,
 # )
+jwt = JWTManager(app)
+    
+@app.before_request
+def create_tables():
+    print("Creating all tables before first request...")
+    db.create_all()
+
 
 @app.route("/")
 def index():
@@ -286,9 +294,12 @@ def paystatus(sale_id):
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
+    # with app.app_context():
+    #     db.create_all()
 
     app.run(debug=True)
+
+
+
 
 
