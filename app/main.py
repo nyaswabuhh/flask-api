@@ -24,7 +24,10 @@ from extensions import app, db
 # )
 jwt = JWTManager(app)
     
-
+@app.before_request
+def create_tables():
+    print("Creating all tables before first request...")
+    db.create_all()
 
 
 @app.route("/")
@@ -290,10 +293,7 @@ def paystatus(sale_id):
 
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
-
-    app.run(debug=True)
+      app.run(debug=True)
 
 
 
