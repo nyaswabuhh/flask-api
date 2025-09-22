@@ -8,7 +8,8 @@ app = Flask(__name__)
 # app.config['SQLALCHEMY_DATABASE_URI']='sqlite://database/flask_api.db'
 
 # app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI']='postgresql://myduka_user:simbapos2019@172.17.0.1:5432/myduka_api'
+#app.config['SQLALCHEMY_DATABASE_URI']='postgresql://myduka_user:simbapos2019@172.17.0.1:5432/myduka_api'
+app.config['SQLALCHEMY_DATABASE_URI']='postgresql://postgres:simbapos%402019@172.17.0.1:5432/myduka_api'
 # CREATE USER myduka_user WITH PASSWORD 'Zdfdgdg#'
 # GRANT CONNECT ON DATABASE myduka_api TO myduka_user;
 
